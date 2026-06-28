@@ -27,7 +27,7 @@ public class XRFCalcUIDefinition
     }
 
 
-    static string help = "coucou";
+    static string help = "";
 
     private static readonly TabItem helpPage = new () { Header = "Help", Background = new SolidColorBrush(Colors.Gray), Foreground = new SolidColorBrush(Colors.Black) };
 
@@ -42,13 +42,6 @@ public class XRFCalcUIDefinition
         tab.Items.Add(helpPage);
         ;
 
-        Persistence.Initialize(storageProvider);
-        if (!Persistence.Initialized)
-        {
-            item1.Content = "Error initializing Persistence";
-            tab.SelectedIndex = 0;
-            return;
-        }
 
         if (!InitElamTable())
         {
@@ -61,7 +54,7 @@ public class XRFCalcUIDefinition
             XRFCalcContent.InitializeMendeleevTable();
             XRFCalcContent.InitializeChemistry();
             XRFCalcContent.InitializeRadiation();
-            XRFCalcContent.InitializeData();
+           // XRFCalcContent.InitializeData();
             //
             item1.Content = XRFCalcContent.ChemGrid;
             item2.Content = XRFCalcContent.RadGrid;

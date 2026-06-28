@@ -1,13 +1,11 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core.Plugins;
 using Avalonia.LogicalTree;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using XRFCalc.ViewModels;
 using XRFCalc.Views;
 
@@ -20,11 +18,11 @@ public partial class App : Application
         AvaloniaXamlLoader.Load(this);
     }
 
+    public static IStorageProvider? storageProvider = null;
     
     public override void OnFrameworkInitializationCompleted()
     {
         TabControl? mainTab = null;
-        IStorageProvider? storageProvider = null;
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
@@ -47,13 +45,14 @@ public partial class App : Application
         }
         else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
         {
-            singleViewPlatform.MainView = new MainView
+            MainView = singleViewPlatform.MainView = new MainView
             {
                 DataContext = new MainViewModel()
             };
             mainTab = singleViewPlatform.MainView.FindControl<TabControl>("MainTabControl");
-            var top = TopLevel.GetTopLevel(singleViewPlatform.MainView);
-            storageProvider = top?.StorageProvider;
+            singleViewPlatform.MainView.Loaded += MainView_Loaded;
+            //var top = TopLevel.GetTopLevel(singleViewPlatform.MainView);
+            //storageProvider = top?.StorageProvider;
 
         }
         Debug.Assert(mainTab != null);
@@ -61,6 +60,17 @@ public partial class App : Application
             XRFCalcUIDefinition.InitializeApplication(mainTab, storageProvider);
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    public Control? MainView;
+    public bool IsMainViewLoaded = false;
+
+    private void MainView_Loaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        IsMainViewLoaded = true;
+        var top = TopLevel.GetTopLevel(MainView);
+        storageProvider = top?.StorageProvider;
+        XRFCalcContent.InitializeData();
     }
 
     private void DisableAvaloniaDataAnnotationValidation()
