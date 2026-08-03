@@ -515,7 +515,7 @@ internal partial class XRFCalcContent
     {
         readingInput = true;
         if (!Persistence.Initialized)
-            Persistence.Initialize(App.storageProvider);
+            Persistence.Initialize(App.StorageProvider);
         var datas = Persistence.ReadIniFile();
         if (datas == null) return;
         var inDensities = false;

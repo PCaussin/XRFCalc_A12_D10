@@ -1,10 +1,11 @@
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Platform;
+using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using System;
 using System.IO;
-using Avalonia.Platform;
 using XRFCalc.XRF;
-using Avalonia.Platform.Storage;
 
 namespace XRFCalc;
 
@@ -29,7 +30,7 @@ public class XRFCalcUIDefinition
 
     static string help = "";
 
-    private static readonly TabItem helpPage = new () { Header = "Help", Background = new SolidColorBrush(Colors.Gray), Foreground = new SolidColorBrush(Colors.Black) };
+    private static readonly TabItem helpPage = new() { Header = "Help", Background = new SolidColorBrush(Colors.Gray), Foreground = new SolidColorBrush(Colors.Black) };
 
     public static void InitializeApplication(TabControl tab, IStorageProvider? storageProvider)
     {
@@ -40,7 +41,6 @@ public class XRFCalcUIDefinition
         tab.Items.Add(item1);
         tab.Items.Add(item2);
         tab.Items.Add(helpPage);
-        ;
 
 
         if (!InitElamTable())
@@ -54,7 +54,10 @@ public class XRFCalcUIDefinition
             XRFCalcContent.InitializeMendeleevTable();
             XRFCalcContent.InitializeChemistry();
             XRFCalcContent.InitializeRadiation();
-           // XRFCalcContent.InitializeData();
+            if (App.IsDesktop)
+            {
+                XRFCalcContent.InitializeData();
+            }   // (else, on mobile, the data is initialized when the main view is loaded)
             //
             item1.Content = XRFCalcContent.ChemGrid;
             item2.Content = XRFCalcContent.RadGrid;
@@ -77,10 +80,12 @@ public class XRFCalcUIDefinition
         try
         {
             helpPage.Content = "Loading ...";
-            NativeWebView webView = new();
-            webView.NavigateToString(ChangeFontSize(help, FontSizeFactor));
-            //webView.Navigate(new Uri("https://sites.google.com/view/xrfcalc/help"));
-            helpPage.Content = webView;
+            //NativeWebView webView = new() { Focusable = false, IsTabStop = false };
+            //webView.NavigateToString(ChangeFontSize(help, FontSizeFactor));
+            ////webView.Navigate(new Uri("https://sites.google.com/view/xrfcalc/help"));
+            ContentControl control = new ContentControl();
+            control.Loaded += Control_Loaded;
+            helpPage.Content = control;
         }
         catch (Exception ex)
         {
@@ -88,6 +93,30 @@ public class XRFCalcUIDefinition
         }
     }
 
+    private static void Control_Loaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        Dispatcher.UIThread.Post(CreatePlayer, DispatcherPriority.Background);
+    }
+
+    private static NativeWebView webView = new() { Focusable = false, IsTabStop = false };
+    private static void CreatePlayer()
+    {
+        if (helpPage.Content is ContentControl control)
+        {
+            //webView.NavigateToString(ChangeFontSize(help, FontSizeFactor));
+            webView.Loaded += WebView_Loaded;
+            control.Content = webView;
+        }
+    }
+
+    private static void WebView_Loaded(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        Dispatcher.UIThread.Post(LoadView);
+    }
+    public static void LoadView()
+    {
+        webView.NavigateToString(ChangeFontSize(help, FontSizeFactor));
+    }
 
     public static int TabIndex => MainTab == null ? -1 : MainTab.SelectedIndex;
 
